@@ -8,10 +8,10 @@ import { saveOutreachCampaign } from "@/lib/db";
 const inputSchema = z.object({
   companyName: z.string().min(2),
   painPoints: z.string().min(3),
-  outreachAngle: z.string().min(3),
+  outreachAngle: z.string().min(1).optional().default("general outreach"),
   productName: z.string().min(2),
-  productDescription: z.string().min(5),
-  tone: z.enum(["Professional", "Casual", "Direct"]),
+  productDescription: z.string().min(1).optional().default("B2B SaaS solution"),
+  tone: z.enum(["Professional", "Casual", "Direct"]).optional().default("Professional"),
 });
 
 const outputSchema = z.object({
