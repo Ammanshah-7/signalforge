@@ -130,7 +130,7 @@ export default function GeoPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className={`grid h-24 w-24 place-items-center rounded-full border border-zinc-700 text-2xl font-semibold ${scoreColor}`}>
-                {result.geo_score}
+              {result.geo_score > 1 ? result.geo_score : Math.round(result.geo_score * 100)}
               </div>
               <div>
                 <p className="text-sm text-zinc-400">AI Citation Probability</p>
