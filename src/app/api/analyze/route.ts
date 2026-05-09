@@ -98,24 +98,27 @@ export async function POST(req: Request) {
     const raw = await callAI(`Return only valid JSON.\n\n${prompt}`);
     const result = outputSchema.parse(JSON.parse(raw));
 
-    const scanId = await createScan({
-      userId: user.id,
-      type: "geo",
-      input: body,
-    });
-
-    await saveGeoReport({
-      scanId,
-      geoScore: result.geo_score,
-      citationProbability: result.ai_citation_probability,
-      visibilitySummary: result.visibility_summary,
-      strengths: result.strengths,
-      criticalGaps: result.critical_gaps,
-      recommendations: result.recommendations,
-      competitorAdvantages: result.competitor_advantages,
-      quickWins: result.quick_wins,
-    });
-
+    try {
+      const scanId = await createScan({
+        userId: user.id,
+        type: "geo",
+        input: body,
+      });
+      await saveGeoReport({
+        scanId,
+        geoScore: result.geo_score,
+        citationProbability: result.ai_citation_probability,
+        visibilitySummary: result.visibility_summary,
+        strengths: result.strengths,
+        criticalGaps: result.critical_gaps,
+        recommendations: result.recommendations,
+        competitorAdvantages: result.competitor_advantages,
+        quickWins: result.quick_wins,
+      });
+    } catch (dbError) {
+      console.error("[analyze] DB save failed (non-fatal)", dbError);
+    }
+    
     return NextResponse.json({ success: true, data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
