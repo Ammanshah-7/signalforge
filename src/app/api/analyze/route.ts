@@ -116,14 +116,14 @@ export async function POST(req: Request) {
       quickWins: result.quick_wins,
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[analyze] request failed", {
       message,
       stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }
 

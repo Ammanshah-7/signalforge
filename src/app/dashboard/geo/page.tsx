@@ -24,6 +24,16 @@ type GeoResult = {
   quick_wins: string[];
 };
 
+type AnalyzeSuccess = {
+  success: true;
+  data: GeoResult;
+};
+
+type AnalyzeError = {
+  success?: false;
+  error?: string;
+};
+
 const industries = ["SaaS", "E-commerce", "Agency", "Consulting", "Other"] as const;
 const loadingSteps = ["Crawling website...", "Analyzing AI visibility...", "Generating recommendations..."];
 
@@ -75,9 +85,11 @@ export default function GeoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, keyword, industry }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to analyze");
-      setResult(data);
+      const payload = (await res.json()) as AnalyzeSuccess | AnalyzeError;
+      if (!res.ok || !payload || (payload as AnalyzeSuccess).success !== true) {
+        throw new Error((payload as AnalyzeError)?.error ?? "Failed to analyze");
+      }
+      setResult((payload as AnalyzeSuccess).data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to analyze");
     } finally {
