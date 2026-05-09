@@ -1,10 +1,24 @@
 ﻿import { z } from "zod";
 
+const supabasePublishableKeySchema = z
+  .string()
+  .min(1)
+  .refine((key) => key.startsWith("sb_publishable_") || key.startsWith("eyJ"), {
+    message: "Must start with sb_publishable_ (or be a legacy JWT key).",
+  });
+
+const supabaseSecretKeySchema = z
+  .string()
+  .min(1)
+  .refine((key) => key.startsWith("sb_secret_") || key.startsWith("eyJ"), {
+    message: "Must start with sb_secret_ (or be a legacy JWT key).",
+  });
+
 const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().describe("Public app URL, e.g. http://localhost:3000"),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().describe("Supabase project URL"),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).describe("Supabase anon public key"),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).describe("Supabase service role key (server-only)"),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: supabasePublishableKeySchema.describe("Supabase anon public key"),
+  SUPABASE_SERVICE_ROLE_KEY: supabaseSecretKeySchema.describe("Supabase service role key (server-only)"),
   ANTHROPIC_API_KEY: z.string().min(1).describe("Anthropic API key"),
   OPENAI_API_KEY: z.string().min(1).describe("OpenAI API key"),
   FIRECRAWL_API_KEY: z.string().min(1).describe("Firecrawl API key"),
@@ -47,9 +61,12 @@ export function getEnv() {
       const details = err.issues
         .map((issue) => `• ${issue.path.join(".")}: ${issue.message}`)
         .join("\n");
-      throw new Error(`Invalid environment configuration:\n${details}`);
+      throw new Error(
+        `Invalid environment configuration. Check your .env / Vercel variables:\n${details}`,
+      );
     }
-    throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to validate environment variables: ${message}`);
   }
   return cachedEnv;
 }

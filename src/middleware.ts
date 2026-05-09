@@ -1,12 +1,24 @@
 ﻿import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getEnv } from "@/lib/env";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+  let env;
+
+  try {
+    env = getEnv();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown environment error";
+    return NextResponse.json(
+      { error: "Server environment misconfiguration", details: message },
+      { status: 500 },
+    );
+  }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         get(name: string) {

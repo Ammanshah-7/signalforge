@@ -6,8 +6,7 @@ alter table outreach_campaigns enable row level security;
 alter table subscriptions enable row level security;
 
 create policy "users_self_access" on users
-  for select using (auth.uid() = id)
-  with check (auth.uid() = id);
+  for select using (auth.uid() = id);
 
 create policy "scans_owner_crud" on scans
   for all using (auth.uid() = user_id)
