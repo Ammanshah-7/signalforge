@@ -1,5 +1,5 @@
 ﻿export const GEO_ANALYSIS_PROMPT_TEMPLATE = `
-You are a GEO (Generative Engine Optimization) expert. Analyze this website for AI search visibility.
+Analyze AI-search visibility for this website.
 
 Target keyword: {keyword}
 Industry: {industry}
@@ -7,14 +7,14 @@ Industry: {industry}
 Website content:
 {websiteContent}
 
-Top competitors ranking for this keyword:
+Competitor snippets:
 {competitorContent}
 
-Return ONLY a valid JSON object:
+Return ONLY valid JSON with this exact shape:
 {
   "geo_score": ,
   "ai_citation_probability": "low" | "medium" | "high",
-  "visibility_summary": "<2 sentences: current state + biggest opportunity>",
+  "visibility_summary": "<max 2 sentences>",
   "strengths": ["", ...],
   "critical_gaps": ["", ...],
   "recommendations": [

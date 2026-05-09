@@ -32,6 +32,11 @@ const outputSchema = z.object({
   quick_wins: z.array(z.string()),
 });
 
+function truncate(text: string, maxChars: number) {
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars)}...`;
+}
+
 export async function POST(req: Request) {
   try {
     const body = inputSchema.parse(await req.json());
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
     let websiteContent = "";
     try {
       const website = await scrapeWebsite(body.url);
-      websiteContent = website.mainContent?.trim() ?? "";
+      websiteContent = truncate(website.mainContent?.trim() ?? "", 2000);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("[analyze] Firecrawl scrape failed", { url: body.url, message });
@@ -49,10 +54,16 @@ export async function POST(req: Request) {
     let competitorContent = "";
     try {
       const competitorSearch = await queryIntentSources(`${body.keyword} best tools 2026`);
-      competitorContent = competitorSearch
-        .map((c) => `Title: ${c.title}\nURL: ${c.url}\nContent: ${c.content}`)
+      competitorContent = truncate(
+        competitorSearch
+          .map((c) => {
+            const compact = `Title: ${c.title}\nURL: ${c.url}\nContent: ${c.content}`.trim();
+            return truncate(compact, 200);
+          })
         .join("\n\n")
-        .trim();
+          .trim(),
+        1000,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("[analyze] Tavily query failed", { keyword: body.keyword, message });
