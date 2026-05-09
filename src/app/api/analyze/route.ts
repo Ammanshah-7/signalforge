@@ -37,18 +37,52 @@ export async function POST(req: Request) {
     const body = inputSchema.parse(await req.json());
     const { user } = await requireUser();
 
-    const website = await scrapeWebsite(body.url);
-    const competitorSearch = await queryIntentSources(`${body.keyword} best tools 2026`);
-    const competitorContent = competitorSearch
-      .map((c) => `Title: ${c.title}\nURL: ${c.url}\nContent: ${c.content}`)
-      .join("\n\n");
+    let websiteContent = "";
+    try {
+      const website = await scrapeWebsite(body.url);
+      websiteContent = website.mainContent?.trim() ?? "";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[analyze] Firecrawl scrape failed", { url: body.url, message });
+    }
+
+    let competitorContent = "";
+    try {
+      const competitorSearch = await queryIntentSources(`${body.keyword} best tools 2026`);
+      competitorContent = competitorSearch
+        .map((c) => `Title: ${c.title}\nURL: ${c.url}\nContent: ${c.content}`)
+        .join("\n\n")
+        .trim();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[analyze] Tavily query failed", { keyword: body.keyword, message });
+    }
+
+    if (!websiteContent) {
+      websiteContent = [
+        "Website content unavailable from scraping.",
+        `Target URL: ${body.url}`,
+        `Primary keyword focus: ${body.keyword}`,
+      ].join("\n");
+    }
+
+    if (!competitorContent) {
+      competitorContent = [
+        "Competitor search content unavailable from Tavily.",
+        `Market keyword: ${body.keyword}`,
+      ].join("\n");
+    }
 
     const prompt = buildGeoAnalysisPrompt({
       keyword: body.keyword,
       industry: body.industry,
-      websiteContent: website.mainContent,
+      websiteContent,
       competitorContent,
     });
+
+    if (!prompt.trim()) {
+      throw new Error("Generated analysis prompt is empty");
+    }
 
     const raw = await callAI(`Return only valid JSON.\n\n${prompt}`);
     const result = outputSchema.parse(JSON.parse(raw));
@@ -73,7 +107,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Analysis failed" }, { status: 400 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[analyze] request failed", {
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
