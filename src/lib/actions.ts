@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
-import { runStructuredAI } from "@/lib/ai";
+import { callAI } from "@/lib/ai";
 import { geoOutputSchema, intentOutputSchema, outreachOutputSchema } from "@/lib/ai-schemas";
 import { GEO_ANALYSIS_PROMPT } from "@/lib/prompts/geo-analysis";
 import { INTENT_ANALYSIS_PROMPT } from "@/lib/prompts/intent-analysis";
@@ -14,6 +14,15 @@ import { createScan, getUserSubscription } from "@/lib/db";
 import { enforceUsageLimit } from "@/lib/usage";
 import { sendScanCompleteEmail } from "@/lib/resend";
 import { createServerSupabase } from "@/lib/supabase/server";
+ 
+async function runStructuredFromPrompt<T extends z.ZodTypeAny>(args: {
+  systemPrompt: string;
+  userPrompt: string;
+  schema: T;
+}) {
+  const raw = await callAI(`${args.systemPrompt}\n\n${args.userPrompt}`);
+  return args.schema.parse(JSON.parse(raw));
+}
 
 const geoInput = z.object({
   website: z.string().url(),
@@ -43,7 +52,7 @@ export async function runGeoAnalysisAction(input: z.infer<typeof geoInput>) {
 
   const content = await scrapeWebsite(parsed.website);
 
-  const result = await runStructuredAI({
+  const result = await runStructuredFromPrompt({
     systemPrompt: GEO_ANALYSIS_PROMPT,
     userPrompt: JSON.stringify({ ...parsed, content }),
     schema: geoOutputSchema,
@@ -72,7 +81,7 @@ export async function runIntentAnalysisAction(input: z.infer<typeof intentInput>
   await enforceScanPolicy(user.id);
 
   const sources = await queryIntentSources(parsed.keyword);
-  const result = await runStructuredAI({
+  const result = await runStructuredFromPrompt({
     systemPrompt: INTENT_ANALYSIS_PROMPT,
     userPrompt: JSON.stringify({ keyword: parsed.keyword, sources }),
     schema: intentOutputSchema,
@@ -88,7 +97,7 @@ export async function runOutreachGeneratorAction(input: z.infer<typeof outreachI
 
   assertRateLimit(`outreach:${user.id}`, 60, 60_000);
 
-  const result = await runStructuredAI({
+  const result = await runStructuredFromPrompt({
     systemPrompt: OUTREACH_PROMPT,
     userPrompt: JSON.stringify({
       company: sanitizeText(parsed.company),

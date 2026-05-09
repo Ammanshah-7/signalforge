@@ -1,7 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildOutreachPrompt } from "@/lib/prompts/outreach";
-import { runStructuredAI } from "@/lib/ai";
+import { callAI } from "@/lib/ai";
 import { requireUser } from "@/lib/auth";
 import { saveOutreachCampaign } from "@/lib/db";
 
@@ -33,11 +33,8 @@ export async function POST(req: Request) {
     const { user } = await requireUser();
 
     const prompt = buildOutreachPrompt(body);
-    const result = await runStructuredAI({
-      systemPrompt: "Return only valid JSON.",
-      userPrompt: prompt,
-      schema: outputSchema,
-    });
+    const raw = await callAI(`Return only valid JSON.\n\n${prompt}`);
+    const result = outputSchema.parse(JSON.parse(raw));
 
     await saveOutreachCampaign({ userId: user.id, company: body.companyName, content: result });
     return NextResponse.json(result);

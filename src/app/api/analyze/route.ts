@@ -1,7 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildGeoAnalysisPrompt } from "@/lib/prompts/geo-analysis";
-import { runStructuredAI } from "@/lib/ai";
+import { callAI } from "@/lib/ai";
 import { scrapeWebsite, queryIntentSources } from "@/lib/ingestion";
 import { requireUser } from "@/lib/auth";
 import { createScan, saveGeoReport } from "@/lib/db";
@@ -50,11 +50,8 @@ export async function POST(req: Request) {
       competitorContent,
     });
 
-    const result = await runStructuredAI({
-      systemPrompt: "Return only valid JSON.",
-      userPrompt: prompt,
-      schema: outputSchema,
-    });
+    const raw = await callAI(`Return only valid JSON.\n\n${prompt}`);
+    const result = outputSchema.parse(JSON.parse(raw));
 
     const scanId = await createScan({
       userId: user.id,

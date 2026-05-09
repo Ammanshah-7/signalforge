@@ -1,7 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildIntentPrompt } from "@/lib/prompts/intent-analysis";
-import { runStructuredAI } from "@/lib/ai";
+import { callAI } from "@/lib/ai";
 import { queryIntentSources } from "@/lib/ingestion";
 import { requireUser } from "@/lib/auth";
 import { createScan, saveIntentSignals } from "@/lib/db";
@@ -61,11 +61,8 @@ export async function POST(req: Request) {
             sourceUrl: result.url,
           });
 
-          const analyzed = await runStructuredAI({
-            systemPrompt: "Return only valid JSON.",
-            userPrompt: prompt,
-            schema: signalSchema,
-          });
+          const raw = await callAI(`Return only valid JSON.\n\n${prompt}`);
+          const analyzed = signalSchema.parse(JSON.parse(raw));
 
           if (analyzed.has_intent) {
             signals.push(analyzed);
