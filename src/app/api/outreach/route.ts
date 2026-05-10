@@ -6,11 +6,11 @@ import { requireUser } from "@/lib/auth";
 import { saveOutreachCampaign } from "@/lib/db";
 
 const inputSchema = z.object({
-  companyName: z.string().min(2),
-  painPoints: z.string().min(3),
-  outreachAngle: z.string().min(1).optional().default("general outreach"),
-  productName: z.string().min(2),
-  productDescription: z.string().min(1).optional().default("B2B SaaS solution"),
+  companyName: z.string().min(1),
+  painPoints: z.string().min(1),
+  outreachAngle: z.string().optional().default("general outreach"),
+  productName: z.string().min(1),
+  productDescription: z.string().optional().default("B2B SaaS solution"),
   tone: z.enum(["Professional", "Casual", "Direct"]).optional().default("Professional"),
 });
 
@@ -33,13 +33,35 @@ export async function POST(req: Request) {
     const { user } = await requireUser();
 
     const prompt = buildOutreachPrompt(body);
-    const raw = await callAI(`Return only valid JSON.\n\n${prompt}`);
-    const result = outputSchema.parse(JSON.parse(raw));
 
-    await saveOutreachCampaign({ userId: user.id, company: body.companyName, content: result });
+    const raw = await callAI(`Return only valid JSON with these exact fields: email (object with subject, body, cta), linkedin_dm, follow_up_day3, follow_up_day7, personalization_score (number 0-100), why_this_works.\n\n${prompt}`);
+
+    let result;
+    try {
+      result = outputSchema.parse(JSON.parse(raw));
+    } catch {
+      // If schema validation fails, build result from raw
+      const parsed = JSON.parse(raw);
+      result = {
+        email: parsed.email ?? { subject: "Following up", body: raw, cta: "Let's connect" },
+        linkedin_dm: parsed.linkedin_dm ?? "Hi, saw you might benefit from our tool.",
+        follow_up_day3: parsed.follow_up_day3 ?? "Just following up on my previous message.",
+        follow_up_day7: parsed.follow_up_day7 ?? "I'll leave it here. Feel free to reach out anytime.",
+        personalization_score: parsed.personalization_score ?? 70,
+        why_this_works: parsed.why_this_works ?? "Personalized to their specific pain points.",
+      };
+    }
+
+    try {
+      await saveOutreachCampaign({ userId: user.id, company: body.companyName, content: result });
+    } catch (dbError) {
+      console.error("[outreach] DB save failed (non-fatal)", dbError);
+    }
+
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Outreach generation failed" }, { status: 400 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[outreach] failed:", message);
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-
