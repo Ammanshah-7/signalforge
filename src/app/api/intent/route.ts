@@ -30,7 +30,12 @@ export async function POST(req: Request) {
     const body = inputSchema.parse(await req.json());
     const { user } = await requireUser();
 
-    const scanId = await createScan({ userId: user.id, type: "intent", input: body });
+    let scanId = "";
+try {
+  scanId = await createScan({ userId: user.id, type: "intent", input: body });
+} catch (dbError) {
+  console.error("[intent] createScan failed (non-fatal)", dbError);
+}
     const signals: z.infer<typeof signalSchema>[] = [];
 
     // Only use first keyword, one search query — avoid rate limits
