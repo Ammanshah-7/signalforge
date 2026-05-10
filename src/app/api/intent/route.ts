@@ -42,7 +42,7 @@ try {
     const keyword = body.keywords[0];
     const query = `${keyword} alternative OR recommendation OR switching`;
 
-    let results = [];
+    let results: Array<{ title: string; url: string; content: string }> = [];
     try {
       results = await queryIntentSources(query);
     } catch {
