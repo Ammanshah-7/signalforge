@@ -6,21 +6,13 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-type Scan = {
-  id: string;
-  created_at: string;
-  type: string;
-  input: Record<string, string>;
-};
-
 type GeoReport = {
   id: string;
   scan_id: string;
   geo_score: number;
   ai_citation_probability: string;
-  visibility_summary: string;
   created_at: string;
-  scans: { input: Record<string, string> };
+  scans: { input: Record<string, string> } | null;
 };
 
 type IntentSignal = {
@@ -48,13 +40,17 @@ function scoreColor(score: number) {
 }
 
 function formatDate(str: string) {
-  return new Date(str).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(str).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+  });
 }
 
 function exportCSV(data: Record<string, string | number>[], filename: string) {
   if (!data.length) return;
   const headers = Object.keys(data[0]).join(",");
-  const rows = data.map((r) => Object.values(r).map((v) => `"${v}"`).join(",")).join("\n");
+  const rows = data.map((r) =>
+    Object.values(r).map((v) => `"${v}"`).join(",")
+  ).join("\n");
   const blob = new Blob([`${headers}\n${rows}`], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -78,13 +74,11 @@ export default function ReportsPage() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       const [geoRes, intentRes, outreachRes] = await Promise.all([
-        supabase.from("geo_reports").select("*, scans(input)").eq("scans.user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("geo_reports").select("*, scans(input)").order("created_at", { ascending: false }),
         supabase.from("intent_signals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("outreach_campaigns").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
-
       setGeoReports((geoRes.data as GeoReport[]) ?? []);
       setIntentSignals((intentRes.data as IntentSignal[]) ?? []);
       setOutreachCampaigns((outreachRes.data as OutreachCampaign[]) ?? []);

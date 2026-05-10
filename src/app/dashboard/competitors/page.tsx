@@ -12,15 +12,6 @@ type GeoResult = {
   visibility_summary: string;
   strengths: string[];
   critical_gaps: string[];
-  recommendations: Array<{
-    priority: string;
-    category: string;
-    title: string;
-    what_to_do: string;
-    example: string;
-    expected_impact: string;
-  }>;
-  competitor_advantages: string[];
   quick_wins: string[];
 };
 
@@ -38,7 +29,7 @@ function scoreColor(score: number) {
   return "text-emerald-400";
 }
 
-function scoreBg(score: number) {
+function scoreBorder(score: number) {
   if (score < 40) return "border-red-800";
   if (score <= 70) return "border-amber-800";
   return "border-emerald-800";
@@ -77,20 +68,15 @@ export default function CompetitorsPage() {
   async function handleCompare() {
     setError(null);
     setResults([]);
-
-    try { new URL(myUrl); } catch { setError("Please enter a valid URL for your site."); return; }
-    try { new URL(competitor1); } catch { setError("Please enter a valid URL for Competitor 1."); return; }
-
+    try { new URL(myUrl); } catch { setError("Enter a valid URL for your site."); return; }
+    try { new URL(competitor1); } catch { setError("Enter a valid URL for Competitor 1."); return; }
     const urls = [myUrl, competitor1, competitor2, competitor3].filter(Boolean);
     setLoading(true);
-
     const allResults: SiteResult[] = [];
     for (let i = 0; i < urls.length; i++) {
       setLoadingStep(`Analyzing ${i === 0 ? "your site" : `competitor ${i}`}... (${i + 1}/${urls.length})`);
-      const result = await analyzeSite(urls[i]);
-      allResults.push(result);
+      allResults.push(await analyzeSite(urls[i]));
     }
-
     setResults(allResults);
     setLoading(false);
     setLoadingStep("");
@@ -127,15 +113,15 @@ export default function CompetitorsPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs text-zinc-400 mb-1 block">Competitor 1 URL (required)</label>
+            <label className="text-xs text-zinc-400 mb-1 block">Competitor 1 (required)</label>
             <Input value={competitor1} onChange={(e) => setCompetitor1(e.target.value)} placeholder="https://competitor1.com" />
           </div>
           <div>
-            <label className="text-xs text-zinc-400 mb-1 block">Competitor 2 URL (optional)</label>
+            <label className="text-xs text-zinc-400 mb-1 block">Competitor 2 (optional)</label>
             <Input value={competitor2} onChange={(e) => setCompetitor2(e.target.value)} placeholder="https://competitor2.com" />
           </div>
           <div>
-            <label className="text-xs text-zinc-400 mb-1 block">Competitor 3 URL (optional)</label>
+            <label className="text-xs text-zinc-400 mb-1 block">Competitor 3 (optional)</label>
             <Input value={competitor3} onChange={(e) => setCompetitor3(e.target.value)} placeholder="https://competitor3.com" />
           </div>
         </div>
@@ -148,12 +134,11 @@ export default function CompetitorsPage() {
 
       {results.length > 0 && (
         <div className="space-y-4">
-          {/* Score Cards */}
           <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${results.length}, 1fr)` }}>
             {results.map((r, i) => (
-              <Card key={r.url} className={`p-4 space-y-2 border ${r.result ? scoreBg(r.result.geo_score) : "border-zinc-800"}`}>
+              <Card key={r.url} className={`p-4 space-y-2 border ${r.result ? scoreBorder(r.result.geo_score) : "border-zinc-800"}`}>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-zinc-400 truncate">{i === 0 ? "Your Site" : `Competitor ${i}`}</p>
+                  <p className="text-xs text-zinc-400">{i === 0 ? "Your Site" : `Competitor ${i}`}</p>
                   {winner?.url === r.url && (
                     <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded-full">👑 Winner</span>
                   )}
@@ -172,7 +157,6 @@ export default function CompetitorsPage() {
             ))}
           </div>
 
-          {/* Comparison Table */}
           {myResult?.result && competitorResults.some((r) => r.result) && (
             <div className="grid gap-4 md:grid-cols-2">
               <Card className="p-4 border-emerald-900/30">
@@ -194,7 +178,6 @@ export default function CompetitorsPage() {
             </div>
           )}
 
-          {/* Quick Wins */}
           {myResult?.result && myResult.result.quick_wins.length > 0 && (
             <Card className="p-4">
               <h3 className="font-medium mb-3">⚡ Quick Wins to Beat Competitors</h3>
@@ -206,7 +189,6 @@ export default function CompetitorsPage() {
             </Card>
           )}
 
-          {/* Generate Outreach */}
           {competitorResults[0]?.result && (
             <Card className="p-4 flex items-center justify-between">
               <div>
@@ -215,7 +197,7 @@ export default function CompetitorsPage() {
               </div>
               <Button onClick={() => {
                 const params = new URLSearchParams({
-                  company: new URL(competitor1).hostname,
+                  company: competitor1,
                   pains: myResult?.result?.critical_gaps.join("; ") ?? "",
                   angle: `They outrank you in AI search for ${keyword}`,
                 });
