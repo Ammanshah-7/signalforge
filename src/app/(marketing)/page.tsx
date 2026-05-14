@@ -1,3 +1,7 @@
+"use client";
+
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
@@ -267,9 +271,18 @@ export default function MarketingHomePage() {
             </div>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {features.map((f) => (
-                <article key={f.title} className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = f.glow; (e.currentTarget as HTMLElement).style.borderColor = `${f.color}30`; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; }}
+                <article
+                  key={f.title}
+                  className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
+                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = f.glow;
+                    (e.currentTarget as HTMLElement).style.borderColor = `${f.color}30`;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
+                  }}
                 >
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ background: `${f.color}15`, border: `1px solid ${f.color}25`, color: f.color }}>{f.icon}</div>
                   <h3 className="text-lg font-bold text-white mb-1">{f.title}</h3>
@@ -363,7 +376,11 @@ export default function MarketingHomePage() {
               Ready to find your next customer?
             </h2>
             <p className="text-zinc-400 mb-10 text-lg">No credit card. No sales call. Just sign up and run your first scan in 60 seconds.</p>
-            <Link href="/signup" className={cn(buttonVariants({ variant: "default", size: "default" }), "min-h-[52px] px-12 text-base marketing-cta-glow")} style={{ boxShadow: "0 0 32px rgba(6,182,212,0.35), 0 1px 0 rgba(255,255,255,0.1) inset", fontSize: "16px" }}>
+            <Link
+              href="/signup"
+              className={cn(buttonVariants({ variant: "default", size: "default" }), "min-h-[52px] px-12 text-base marketing-cta-glow")}
+              style={{ boxShadow: "0 0 32px rgba(6,182,212,0.35), 0 1px 0 rgba(255,255,255,0.1) inset", fontSize: "16px" }}
+            >
               Start Free — No Card Needed
             </Link>
           </div>
@@ -387,7 +404,9 @@ export default function MarketingHomePage() {
           </nav>
         </div>
         <div className="container mt-10 border-t border-white/[0.06] pt-8 text-center text-sm text-zinc-600">
-          Made with ❤️ for B2B founders · © {new Date().getFullYear()} SignalForge
+          Made with ❤️ for B2B founders · ©{" "}
+          <span suppressHydrationWarning>{new Date().getFullYear()}</span>{" "}
+          SignalForge
         </div>
       </footer>
     </div>
