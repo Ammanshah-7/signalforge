@@ -125,7 +125,7 @@ export default function LoginPage() {
               </span>
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-              Real-time signal processing for enterprise teams who can't afford
+              Real-time signal processing for enterprise teams who cannot afford
               to miss a beat.
             </p>
           </div>
