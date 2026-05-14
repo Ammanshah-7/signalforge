@@ -24,7 +24,7 @@ type IntentSignal = {
 type OutreachCampaign = {
   id: string;
   created_at: string;
-  company_name: string;
+  company: string;
   status: string;
   email_content: Record<string, string>;
 };
@@ -91,7 +91,7 @@ export default function ReportsPage() {
 
   const filteredGeo = geoReports.filter(r => !search || (r.scans?.input?.url ?? "").toLowerCase().includes(search.toLowerCase()) || (r.scans?.input?.keyword ?? "").toLowerCase().includes(search.toLowerCase()));
   const filteredIntent = intentSignals.filter(s => !search || (s.query ?? "").toLowerCase().includes(search.toLowerCase()));
-  const filteredOutreach = outreachCampaigns.filter(c => !search || c.company_name.toLowerCase().includes(search.toLowerCase()));
+  const filteredOutreach = outreachCampaigns.filter(c => !search || c.company.toLowerCase()  .includes(search.toLowerCase()));
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #050816 0%, #07111f 50%, #0b1020 100%)" }}>
@@ -233,7 +233,7 @@ export default function ReportsPage() {
                     {filteredOutreach.map((c) => (
                       <div key={c.id} className="table-row grid grid-cols-[1.5fr_2fr_1fr_3fr] items-center px-5 py-3.5">
                         <span className="text-xs text-slate-500">{formatDate(c.created_at)}</span>
-                        <span className="text-sm font-medium text-slate-200">{c.company_name}</span>
+                        <span className="text-sm font-medium text-slate-200">{c.company}</span>
                         <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${c.status === "sent" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-white/5 border-white/10 text-slate-500"}`}>
                           {c.status ?? "draft"}
                         </span>
